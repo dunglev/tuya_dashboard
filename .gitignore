@@ -1,0 +1,7 @@
+# Bỏ qua các file môi trường nhạy cảm
+.env
+
+# Bỏ qua môi trường ảo Python và cache
+venv/
+__pycache__/
+*.pyc

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - Tuya Smart Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+        }
+
+        .btn-biometric {
+            background-color: #28a745;
+            display: none;
+        }
+
+        /* Chỉ hiện nếu trình duyệt hỗ trợ */
+        .error {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-card">
+        <h2>🔐 Đăng Nhập Hệ Thống</h2>
+
+        <!-- Form đăng nhập mật khẩu -->
+        <div class="input-group">
+            <label>Tài khoản</label>
+            <input type="text" id="username" value="admin">
+        </div>
+        <div class="input-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="password" placeholder="Nhập mật khẩu">
+        </div>
+        <button class="btn btn-primary" onclick="loginPassword()">Đăng Nhập Bằng Mật Khẩu</button>
+
+        <!-- Nút đăng nhập Face ID / Vân tay (WebAuthn) -->
+        <button id="biometric-btn" class="btn btn-biometric" onclick="loginBiometric()">🪞 Đăng Nhập Bằng Face
+            ID</button>
+
+        <div id="error-msg" class="error"></div>
+    </div>
+
+    <script>
+        // Kiểm tra xem trình duyệt trên điện thoại có hỗ trợ WebAuthn (Face ID / Vân tay) không
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (window.PublicKeyCredential) {
+                const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                if (available) {
+                    document.getElementById('biometric-btn').style.display = 'block';
+                }
+            }
+        });
+
+        // Xử lý đăng nhập mật khẩu
+        async function loginPassword() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                document.getElementById('error-msg').innerText = data.message;
+            }
+        }
+
+        // Xử lý đăng nhập bằng Face ID / Vân tay (Mô phỏng xác thực thiết bị cục bộ)
+        async function loginBiometric() {
+            try {
+                // Yêu cầu trình duyệt kích hoạt cảm biến sinh trắc học (Face ID / Touch ID)
+                const publicKey = {
+                    challenge: Uint8Array.from("random_challenge_string", c => c.charCodeAt(0)),
+                    rp: { name: "Tuya Smart Home Web" },
+                    user: {
+                        id: Uint8Array.from("1", c => c.charCodeAt(0)),
+                        name: "admin",
+                        displayName: "Admin"
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                    timeout: 60000,
+                    authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }
+                };
+
+                // Gọi API bảo mật của thiết bị di động
+                await navigator.credentials.create({ publicKey });
+
+                // Nếu quét Face ID thành công trên thiết bị, tự động cấp quyền vào trang chủ
+                // (Trong môi trường thực tế sẽ gửi credential lên server xác thực, ở đây ta xác thực session qua fetch phụ trợ)
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: "admin", password: "123456" }) // bypass qua mật khẩu ngầm khi Face ID khớp
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = '/';
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('error-msg').innerText = "Xác thực Face ID thất bại hoặc bị hủy.";
+            }
+        }
+    </script>
+
+</body>
+
+</html>

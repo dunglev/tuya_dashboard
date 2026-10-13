@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuya Smart Dashboard - Quản Lý, Hẹn Giờ & Đếm Ngược</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 820px;
+            margin: auto;
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn {
+            color: #dc3545;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #f8d7da;
+            background-color: #fdf7f7;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .device-card {
+            padding: 18px;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            background: #ffffff;
+            transition: box-shadow 0.2s;
+        }
+
+        .device-card:hover {
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .device-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .device-info h3 {
+            margin: 0 0 6px 0;
+            font-size: 18px;
+            color: #007bff;
+        }
+
+        .device-info p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 13px;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.15s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            user-select: none;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .btn-on {
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+        }
+
+        .btn-on:hover:not(:disabled) {
+            background-color: #218838;
+            box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-off {
+            background-color: #dc3545;
+            color: white;
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+        }
+
+        .btn-off:hover:not(:disabled) {
+            background-color: #c82333;
+            box-shadow: 0 3px 6px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-timer {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-timer:hover:not(:disabled) {
+            background-color: #e0a800;
+        }
+
+        .btn-countdown {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-countdown:hover:not(:disabled) {
+            background-color: #138496;
+        }
+
+        .btn-cancel {
+            background-color: #e2e6ea;
+            color: #dc3545;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .btn-cancel:hover:not(:disabled) {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .timer-box {
+            background: #f8f9fa;
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            border: 1px solid #edf2f7;
+            margin-top: 8px;
+        }
+
+        .timer-box input,
+        .timer-box select {
+            padding: 6px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+        }
+
+        /* Khung hiển thị thanh đếm ngược */
+        .countdown-active-box {
+            background: #e8f7fa;
+            border: 1px solid #bce8f1;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .countdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .countdown-title {
+            font-weight: 600;
+            color: #0c5460;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .countdown-time-badge {
+            font-size: 14px;
+            font-weight: 700;
+            color: #d9534f;
+            background: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            border: 1px solid #f1c2c2;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #d6eef3;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 18px;
+            position: relative;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #17a2b8, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #155724;
+            top: 0;
+            left: 0;
+            line-height: 18px;
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .status-online {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-offline {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        /* Toast thông báo */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #333;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            font-size: 14px;
+            display: none;
+            z-index: 9999;
+            transition: opacity 0.3s;
+        }
+        #toast.success { background: #28a745; }
+        #toast.error { background: #dc3545; }
+        #toast.info { background: #17a2b8; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Giám Sát & Hẹn Giờ Thiết Bị Tuya</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="btn-refresh" class="btn" style="background-color: #f1f3f5; color: #495057; border: 1px solid #ced4da; padding: 6px 14px;" onclick="manualRefresh()" title="Đồng bộ ngay trạng thái từ Tuya Cloud">
+                    <span id="refresh-icon" style="display: inline-block;">🔄</span> Làm mới
+                </button>
+                <a href="/logout" class="logout-btn">Đăng xuất 🚪</a>
+            </div>
+        </div>
+        <div id="device-list">Đang kết nối và tải danh sách thiết bị...</div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        // Cấu trúc activeCountdowns:
+        // {
+        //   [deviceId]: {
+        //       targetEndTime: number, // timestamp (ms) thời điểm kết thúc chính xác
+        //       total: number,         // tổng thời gian đếm ngược (giây)
+        //       code: string,          // DP code ('countdown_1', ...)
+        //       switchCode: string,    // DP code công tắc nguồn ('switch', 'switch_1')
+        //       deviceName: string,    // Tên thiết bị
+        //       lastSetAt: number      // timestamp (ms) lúc thiết lập
+        //   }
+        // }
+        let activeCountdowns = {};
+        const STORAGE_KEY = 'tuya_dashboard_countdowns';
+
+        // Danh sách các countdown vừa hoàn thành: { [deviceId]: timestamp }
+        // Dùng để CHẶN TUYA CLOUD HỒI SINH COUNTDOWN trong 45 giây sau khi kết thúc
+        let completedCountdowns = {};
+
+        // Bản đồ lưu trạng thái công tắc lạc quan (Optimistic State)
+        let localSwitchStates = {};
+
+        function loadSavedCountdowns() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                const now = Date.now();
+                for (let devId in saved) {
+                    if (saved[devId] && saved[devId].targetEndTime && saved[devId].targetEndTime > now) {
+                        activeCountdowns[devId] = saved[devId];
+                    }
+                }
+            } catch (e) {
+                console.error("Lỗi đọc storage countdown:", e);
+            }
+        }
+
+        function saveCountdownsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(activeCountdowns));
+            } catch (e) {}
+        }
+
+        loadSavedCountdowns();
+
+        function getRemainingSeconds(devId) {
+            const item = activeCountdowns[devId];
+            if (!item || !item.targetEndTime) return 0;
+            const diff = Math.round((item.targetEndTime - Date.now()) / 1000);
+            return diff > 0 ? diff : 0;
+        }
+
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.className = type;
+            toast.style.display = 'block';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        }
+
+        function formatTimeLeft(seconds) {
+            if (seconds <= 0) return 'Hết giờ';
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            let str = '';
+            if (hrs > 0) str += hrs + ' giờ ';
+            if (mins > 0 || hrs > 0) str += mins + ' phút ';
+            str += secs + ' giây';
+            return str;
+        }
+
+        function saveCurrentInputValues() {
+            const values = {};
+            document.querySelectorAll('input, select').forEach(el => {
+                if (el.id) {
+                    values[el.id] = el.value;
+                }
+            });
+            return values;
+        }
+
+        function restoreInputValues(savedValues) {
+            for (let id in savedValues) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.value = savedValues[id];
+                }
+            }
+        }
+
+        async function fetchDevices() {
+            try {
+                const res = await fetch('/api/devices');
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                const data = await res.json();
+
+                const container = document.getElementById('device-list');
+                if (!data.success || !data.devices || data.devices.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding: 20px; color: #777;">Không tìm thấy thiết bị nào trong tài khoản Tuya.</p>';
+                    return;
+                }
+
+                const savedInputs = saveCurrentInputValues();
+                let html = '';
+                const now = Date.now();
+                let storageNeedSave = false;
+
+                data.devices.forEach(dev => {
+                    const isOnline = !!dev.online;
+                    const statusText = isOnline ? '<span class="status-online">Online 🟢</span>' : '<span class="status-offline">Offline 🔴</span>';
+
+                    let switchStatus = false;
+                    let switchCode = 'switch_1';
+                    let countdownCode = 'countdown_1';
+                    let serverCountdown = 0;
+
+                    if (dev.status && Array.isArray(dev.status)) {
+                        // 1. TÌM CHÍNH XÁC DP CODE CÔNG TẮC BOOLEAN
+                        const mainSwitch = dev.status.find(st => 
+                            typeof st.value === 'boolean' && (st.code === 'switch' || /^switch_\d+$/.test(st.code))
+                        ) || dev.status.find(st => 
+                            typeof st.value === 'boolean' && st.code && st.code.startsWith('switch')
+                        );
+
+                        if (mainSwitch) {
+                            switchCode = mainSwitch.code;
+                            switchStatus = mainSwitch.value;
+                        }
+
+                        // 2. TÌM CHÍNH XÁC DP COUNTDOWN
+                        const cdStatus = dev.status.find(st => 
+                            st.code && st.code.startsWith('countdown') && typeof st.value === 'number'
+                        );
+                        if (cdStatus) {
+                            countdownCode = cdStatus.code;
+                            if (cdStatus.value > 0) {
+                                serverCountdown = cdStatus.value;
+                            }
+                        }
+                    }
+
+                    // --- BẢO VỆ TRẠNG THÁI NÚT BẤM (OPTIMISTIC STATE) ---
+                    const localSw = localSwitchStates[dev.id];
+                    if (localSw && (now - localSw.timestamp < 6000)) {
+                        switchStatus = localSw.status;
+                        if (localSw.code) switchCode = localSw.code;
+                    } else if (localSw) {
+                        delete localSwitchStates[dev.id];
+                    }
+
+                    // --- CHẶN TRIỆT ĐỂ LỖI ĐẾM NGƯỢC VỀ 0 RỒI LẠI ĐẾM TIẾP ---
+                    // Nếu thiết bị vừa mới hoàn tất đếm ngược trong vòng 45 giây:
+                    // BỎ QUA HOÀN TOÀN GIÁ TRỊ COUNTDOWN TỒN ĐỌNG TỪ TUYA CLOUD!
+                    const justFinishedAt = completedCountdowns[dev.id];
+                    const isRecentlyFinished = justFinishedAt && (now - justFinishedAt < 45000);
+
+                    if (isRecentlyFinished) {
+                        serverCountdown = 0; // Ép về 0, không cho Tuya Cloud kích hoạt lại đếm ngược ảo!
+                    }
+
+                    // --- ĐỒNG BỘ THÔNG MINH MỘT CHIỀU VỚI TUYA CLOUD ---
+                    const clientRemaining = getRemainingSeconds(dev.id);
+
+                    if (serverCountdown > 0) {
+                        if (!activeCountdowns[dev.id] || clientRemaining <= 0) {
+                            if (!isRecentlyFinished) {
+                                activeCountdowns[dev.id] = {
+                                    targetEndTime: now + (serverCountdown * 1000),
+                                    total: serverCountdown,
+                                    code: countdownCode,
+                                    switchCode: switchCode,
+                                    deviceName: dev.name,
+                                    lastSetAt: now
+                                };
+                                storageNeedSave = true;
+                            }
+                        } else {
+                            activeCountdowns[dev.id].switchCode = switchCode;
+                            activeCountdowns[dev.id].deviceName = dev.name;
+                            if (serverCountdown > activeCountdowns[dev.id].total + 10) {
+                                activeCountdowns[dev.id].total = serverCountdown;
+                                activeCountdowns[dev.id].targetEndTime = now + (serverCountdown * 1000);
+                                activeCountdowns[dev.id].lastSetAt = now;
+                                storageNeedSave = true;
+                            } else if (serverCountdown < clientRemaining - 30) {
+                                activeCountdowns[dev.id].targetEndTime = now + (serverCountdown * 1000);
+                                storageNeedSave = true;
+                            }
+                        }
+                    } else {
+                        if (activeCountdowns[dev.id]) {
+                            const timeSinceSet = now - (activeCountdowns[dev.id].lastSetAt || 0);
+                            if (timeSinceSet > 8000) {
+                                delete activeCountdowns[dev.id];
+                                storageNeedSave = true;
+                            }
+                        }
+                    }
+
+                    const remaining = getRemainingSeconds(dev.id);
+                    const hasCountdown = remaining > 0;
+                    const totalSecs = activeCountdowns[dev.id]?.total || remaining || 1;
+                    const percent = hasCountdown ? Math.max(0, Math.min(100, Math.round((remaining / totalSecs) * 100))) : 0;
+                    const timeLeftFormatted = hasCountdown ? formatTimeLeft(remaining) : '';
+
+                    html += `
+                    <div class="device-card" id="card-${dev.id}">
+                        <div class="device-row">
+                            <div class="device-info">
+                                <h3>${dev.name}</h3>
+                                <p>Mã: <code>${dev.id}</code> | Loại: ${dev.category} | Trạng thái: ${statusText}</p>
+                            </div>
+                            <div>
+                                <button class="btn ${switchStatus ? 'btn-off' : 'btn-on'}" 
+                                        id="btn-toggle-${dev.id}"
+                                        ${!isOnline ? 'disabled title="Thiết bị đang Offline"' : ''}
+                                        onclick="toggleDevice('${dev.id}', '${switchCode}', ${!switchStatus})">
+                                    ${switchStatus ? 'Tắt ⏻' : 'Bật ⏻'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- KHUNG TRẠNG THÁI ĐẾM NGƯỢC -->
+                        <div id="countdown-box-${dev.id}" class="countdown-active-box" style="display: ${hasCountdown ? 'block' : 'none'};">
+                            <div class="countdown-header">
+                                <span class="countdown-title">
+                                    ⏳ Đang đếm ngược tự tắt:
+                                    <span id="countdown-text-${dev.id}" class="countdown-time-badge">${timeLeftFormatted}</span>
+                                </span>
+                                <button class="btn btn-cancel" onclick="cancelCountdown('${dev.id}', '${countdownCode}')" title="Hủy đếm ngược">
+                                    Hủy Đếm Ngược ❌
+                                </button>
+                            </div>
+                            <div class="progress-container">
+                                <div id="p-bar-${dev.id}" class="progress-bar" style="width: ${percent}%;"></div>
+                                <div id="p-text-${dev.id}" class="progress-text">${percent}%</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Khung 1: Cài đặt Hẹn Giờ Theo Giờ Trong Ngày -->
+                        <div class="timer-box">
+                            <span>⏱️ <strong>Lịch Hẹn:</strong></span>
+                            <input type="time" id="time-${dev.id}" value="06:00">
+                            <select id="action-${dev.id}">
+                                <option value="true">Bật điện</option>
+                                <option value="false">Tắt điện</option>
+                            </select>
+                            <button class="btn btn-timer" 
+                                    ${!isOnline ? 'disabled title="Thiết bị đang Offline"' : ''}
+                                    onclick="setTimer('${dev.id}', '${switchCode}')">
+                                Lưu Lịch Hẹn
+                            </button>
+                        </div>
+                        
+                        <!-- Khung 2: Cài đặt Đếm Ngược Theo Giờ & Phút (Countdown) -->
+                        <div class="timer-box" style="margin-top: 6px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+                            <span>⏳ <strong>Tự tắt sau:</strong></span>
+                            <input type="number" id="cd-hours-${dev.id}" min="0" max="23" value="0" style="width: 55px; text-align: center;" placeholder="Giờ"> giờ
+                            <input type="number" id="cd-minutes-${dev.id}" min="0" max="59" value="30" style="width: 55px; text-align: center;" placeholder="Phút"> phút
+                            <button class="btn btn-countdown" 
+                                    ${!isOnline ? 'disabled title="Thiết bị đang Offline"' : ''}
+                                    onclick="setCountdown('${dev.id}', '${countdownCode}', '${switchCode}', ${switchStatus}, '${dev.name}')">
+                                Kích Hoạt Đếm Ngược
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                });
+
+                if (storageNeedSave) {
+                    saveCountdownsToStorage();
+                }
+
+                container.innerHTML = html;
+                restoreInputValues(savedInputs);
+
+            } catch (err) {
+                console.error("Lỗi khi tải thiết bị:", err);
+            }
+        }
+
+        // Ticker chạy mỗi giây (1000ms): Tính toán trực tiếp theo targetEndTime và Date.now()
+        setInterval(() => {
+            const now = Date.now();
+            let storageNeedSave = false;
+
+            for (let devId in activeCountdowns) {
+                const item = activeCountdowns[devId];
+                if (!item || !item.targetEndTime) continue;
+
+                const remaining = Math.max(0, Math.round((item.targetEndTime - now) / 1000));
+                const box = document.getElementById(`countdown-box-${devId}`);
+                const bar = document.getElementById(`p-bar-${devId}`);
+                const pText = document.getElementById(`p-text-${devId}`);
+                const timeText = document.getElementById(`countdown-text-${devId}`);
+
+                if (remaining > 0) {
+                    const percent = Math.max(0, Math.min(100, Math.round((remaining / item.total) * 100)));
+                    if (box && bar && pText && timeText) {
+                        box.style.display = 'block';
+                        bar.style.width = percent + '%';
+                        pText.innerText = percent + '%';
+                        timeText.innerText = formatTimeLeft(remaining);
+                    }
+                } else {
+                    // --- ĐÃ HẾT GIỜ ĐẾM NGƯỢC (VỀ 0) ---
+                    const switchCodeToTurnOff = item.switchCode || 'switch_1';
+                    const cdCode = item.code || 'countdown_1';
+                    const devName = item.deviceName || devId;
+
+                    // 1. Ghi nhận thời điểm hoàn tất để CHẶN CLOUD HỒI SINH COUNTDOWN
+                    completedCountdowns[devId] = now;
+                    delete activeCountdowns[devId];
+                    storageNeedSave = true;
+
+                    if (box) box.style.display = 'none';
+
+                    // 2. CẬP NHẬT GIAO DIỆN NÚT BẤM VỀ TRẠNG THÁI TẮT NGAY LẬP TỨC (0ms)
+                    localSwitchStates[devId] = {
+                        status: false,
+                        code: switchCodeToTurnOff,
+                        timestamp: now
+                    };
+                    const btn = document.getElementById(`btn-toggle-${devId}`);
+                    if (btn) {
+                        btn.className = 'btn btn-on';
+                        btn.innerHTML = 'Bật ⏻';
+                        btn.setAttribute('onclick', `toggleDevice('${devId}', '${switchCodeToTurnOff}', true)`);
+                    }
+
+                    showToast(`🔔 Thiết bị "${devName}" đã đếm ngược xong và tự động TẮT!`, 'success', 4000);
+
+                    // 3. CHỦ ĐỘNG GỬI LỆNH TẮT THIẾT BỊ VÀ XÓA COUNTDOWN TRÊN SERVER
+                    fetch('/api/control', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_id: devId, code: switchCodeToTurnOff, value: false })
+                    }).catch(console.error);
+
+                    fetch('/api/countdown', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ device_id: devId, hours: 0, minutes: 0, code: cdCode })
+                    }).catch(console.error);
+
+                    // Đồng bộ lại dữ liệu sau 3 giây
+                    setTimeout(fetchDevices, 3000);
+                }
+            }
+
+            if (storageNeedSave) {
+                saveCountdownsToStorage();
+            }
+        }, 1000);
+
+        // --- ĐIỀU KHIỂN BẬT/TẮT VỚI OPTIMISTIC UI UPDATE PHẢN HỒI TỨC THÌ (0ms) ---
+        async function toggleDevice(deviceId, code, targetState) {
+            const btn = document.getElementById(`btn-toggle-${deviceId}`);
+            const originalClass = btn ? btn.className : '';
+            const originalHtml = btn ? btn.innerHTML : '';
+            const originalOnClick = btn ? btn.getAttribute('onclick') : '';
+
+            localSwitchStates[deviceId] = {
+                status: targetState,
+                code: code,
+                timestamp: Date.now()
+            };
+
+            if (btn) {
+                btn.className = `btn ${targetState ? 'btn-off' : 'btn-on'}`;
+                btn.innerHTML = `${targetState ? 'Tắt ⏻' : 'Bật ⏻'} <span style="font-size:11px; opacity:0.8;">⏳</span>`;
+                btn.setAttribute('onclick', `toggleDevice('${deviceId}', '${code}', ${!targetState})`);
+            }
+
+            showToast(`Đang ${targetState ? 'bật' : 'tắt'} thiết bị...`, 'info', 1200);
+
+            try {
+                const res = await fetch('/api/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_id: deviceId, code: code, value: targetState })
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast(result.message || 'Thành công!', 'success', 2000);
+                    if (btn) {
+                        btn.className = `btn ${targetState ? 'btn-off' : 'btn-on'}`;
+                        btn.innerHTML = targetState ? 'Tắt ⏻' : 'Bật ⏻';
+                    }
+                    setTimeout(fetchDevices, 2500);
+                } else {
+                    delete localSwitchStates[deviceId];
+                    if (btn) {
+                        btn.className = originalClass;
+                        btn.innerHTML = originalHtml;
+                        btn.setAttribute('onclick', originalOnClick);
+                    }
+                    showToast('Thất bại: ' + (result.message || 'Lỗi điều khiển'), 'error', 3500);
+                }
+            } catch (err) {
+                delete localSwitchStates[deviceId];
+                if (btn) {
+                    btn.className = originalClass;
+                    btn.innerHTML = originalHtml;
+                    btn.setAttribute('onclick', originalOnClick);
+                }
+                showToast('Lỗi mạng khi điều khiển!', 'error', 3500);
+            }
+        }
+
+        async function setTimer(deviceId, code) {
+            const timeVal = document.getElementById(`time-${deviceId}`)?.value;
+            const actionVal = document.getElementById(`action-${deviceId}`)?.value === 'true';
+
+            if (!timeVal) {
+                showToast('Vui lòng chọn thời gian!', 'error');
+                return;
+            }
+
+            showToast('Đang cài đặt lịch hẹn...', 'info', 1500);
+            try {
+                const res = await fetch('/api/timer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_id: deviceId,
+                        code: code,
+                        time: timeVal,
+                        action: actionVal,
+                        loops: "0000000"
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showToast('Đã thiết lập lịch hẹn giờ thành công lúc ' + timeVal, 'success');
+                } else {
+                    showToast('Lỗi hẹn giờ: ' + result.message, 'error');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối khi hẹn giờ!', 'error');
+            }
+        }
+
+        async function setCountdown(deviceId, countdownCode = 'countdown_1', switchCode = 'switch_1', currentSwitchStatus = false, devName = '') {
+            const hoursVal = document.getElementById(`cd-hours-${deviceId}`)?.value || 0;
+            const minutesVal = document.getElementById(`cd-minutes-${deviceId}`)?.value || 0;
+
+            const hours = parseInt(hoursVal) || 0;
+            const minutes = parseInt(minutesVal) || 0;
+            const totalSecs = (hours * 3600) + (minutes * 60);
+
+            if (totalSecs <= 0) {
+                if (!confirm('Đặt thời gian là 0 sẽ hủy chế độ đếm ngược. Bạn có muốn hủy?')) {
+                    return;
+                }
+            }
+
+            // Xóa cờ hoàn tất cũ để cho phép bắt đầu phiên đếm ngược mới
+            delete completedCountdowns[deviceId];
+
+            // Nếu thiết bị đang tắt: tự động BẬT lên để đếm ngược tắt
+            const willAutoTurnOn = !currentSwitchStatus && totalSecs > 0;
+
+            if (willAutoTurnOn) {
+                localSwitchStates[deviceId] = {
+                    status: true,
+                    code: switchCode,
+                    timestamp: Date.now()
+                };
+                const btn = document.getElementById(`btn-toggle-${deviceId}`);
+                if (btn) {
+                    btn.className = 'btn btn-off';
+                    btn.innerHTML = 'Tắt ⏻';
+                    btn.setAttribute('onclick', `toggleDevice('${deviceId}', '${switchCode}', false)`);
+                }
+            }
+
+            showToast(willAutoTurnOn ? 'Đang bật thiết bị và hẹn tự tắt...' : 'Đang gửi lệnh đếm ngược tắt...', 'info', 1500);
+
+            try {
+                const res = await fetch('/api/countdown', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_id: deviceId,
+                        hours: hours,
+                        minutes: minutes,
+                        code: countdownCode,
+                        switch_code: switchCode,
+                        auto_turn_on: willAutoTurnOn
+                    })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    if (totalSecs > 0) {
+                        const now = Date.now();
+                        activeCountdowns[deviceId] = {
+                            targetEndTime: now + (totalSecs * 1000),
+                            total: totalSecs,
+                            code: countdownCode,
+                            switchCode: switchCode,
+                            deviceName: devName,
+                            lastSetAt: now
+                        };
+                        saveCountdownsToStorage();
+
+                        const box = document.getElementById(`countdown-box-${deviceId}`);
+                        const bar = document.getElementById(`p-bar-${deviceId}`);
+                        const pText = document.getElementById(`p-text-${deviceId}`);
+                        const timeText = document.getElementById(`countdown-text-${deviceId}`);
+
+                        if (box) box.style.display = 'block';
+                        if (bar) bar.style.width = '100%';
+                        if (pText) pText.innerText = '100%';
+                        if (timeText) timeText.innerText = formatTimeLeft(totalSecs);
+
+                        showToast(result.message, 'success');
+                    } else {
+                        delete activeCountdowns[deviceId];
+                        saveCountdownsToStorage();
+                        const box = document.getElementById(`countdown-box-${deviceId}`);
+                        if (box) box.style.display = 'none';
+                        showToast('Đã hủy đếm ngược!', 'success');
+                    }
+                } else {
+                    showToast('Thất bại: ' + result.message, 'error');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối khi đặt đếm ngược!', 'error');
+            }
+        }
+
+        async function cancelCountdown(deviceId, countdownCode = 'countdown_1') {
+            if (!confirm('Bạn có chắc chắn muốn hủy đếm ngược cho thiết bị này?')) return;
+            
+            showToast('Đang hủy đếm ngược...', 'info', 1500);
+            try {
+                const res = await fetch('/api/countdown', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_id: deviceId,
+                        hours: 0,
+                        minutes: 0,
+                        code: countdownCode
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    delete activeCountdowns[deviceId];
+                    saveCountdownsToStorage();
+                    const box = document.getElementById(`countdown-box-${deviceId}`);
+                    if (box) box.style.display = 'none';
+                    showToast('Đã hủy đếm ngược thành công!', 'success');
+                } else {
+                    showToast('Lỗi hủy đếm ngược: ' + result.message, 'error');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối khi hủy đếm ngược!', 'error');
+            }
+        }
+
+        async function manualRefresh() {
+            const icon = document.getElementById('refresh-icon');
+            if (icon) icon.style.animation = 'spin 0.7s linear infinite';
+            showToast('Đang đồng bộ từ Tuya Cloud...', 'info', 1000);
+            try {
+                await fetchDevices();
+                showToast('Đã đồng bộ xong trạng thái!', 'success', 1500);
+            } catch (e) {
+                showToast('Lỗi đồng bộ!', 'error', 2000);
+            } finally {
+                if (icon) icon.style.animation = 'none';
+            }
+        }
+
+        // Tải danh sách lần đầu
+        fetchDevices();
+
+        // Đồng bộ định kỳ mỗi 3 giây (cập nhật trạng thái siêu nhanh)
+        setInterval(fetchDevices, 3000);
+    </script>
+
+</body>
+
+</html>
