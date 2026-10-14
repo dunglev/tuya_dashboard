@@ -1,0 +1,7 @@
+{
+    "admin": {
+        "password": "1",
+        "credentials": [],
+        "biometric_enabled": false
+    }
+}

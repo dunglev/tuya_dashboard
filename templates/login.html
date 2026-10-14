@@ -71,7 +71,6 @@
             display: none;
         }
 
-        /* Chỉ hiện nếu trình duyệt hỗ trợ */
         .error {
             color: #dc3545;
             font-size: 13px;
@@ -85,7 +84,6 @@
     <div class="login-card">
         <h2>🔐 Đăng Nhập Hệ Thống</h2>
 
-        <!-- Form đăng nhập mật khẩu -->
         <div class="input-group">
             <label>Tài khoản</label>
             <input type="text" id="username" value="admin">
@@ -96,25 +94,26 @@
         </div>
         <button class="btn btn-primary" onclick="loginPassword()">Đăng Nhập Bằng Mật Khẩu</button>
 
-        <!-- Nút đăng nhập Face ID / Vân tay (WebAuthn) -->
-        <button id="biometric-btn" class="btn btn-biometric" onclick="loginBiometric()">🪞 Đăng Nhập Bằng Face
-            ID</button>
+        <button id="biometric-btn" class="btn btn-biometric" onclick="loginBiometric()">🪞 Đăng Nhập Bằng Face ID / Vân
+            Tay</button>
 
         <div id="error-msg" class="error"></div>
     </div>
 
     <script>
-        // Kiểm tra xem trình duyệt trên điện thoại có hỗ trợ WebAuthn (Face ID / Vân tay) không
         document.addEventListener("DOMContentLoaded", async () => {
             if (window.PublicKeyCredential) {
-                const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-                if (available) {
-                    document.getElementById('biometric-btn').style.display = 'block';
+                try {
+                    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                    if (available) {
+                        document.getElementById('biometric-btn').style.display = 'block';
+                    }
+                } catch (e) {
+                    console.error("WebAuthn check error:", e);
                 }
             }
         });
 
-        // Xử lý đăng nhập mật khẩu
         async function loginPassword() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -133,40 +132,41 @@
             }
         }
 
-        // Xử lý đăng nhập bằng Face ID / Vân tay (Mô phỏng xác thực thiết bị cục bộ)
         async function loginBiometric() {
             try {
-                // Yêu cầu trình duyệt kích hoạt cảm biến sinh trắc học (Face ID / Touch ID)
+                const username = document.getElementById('username').value || "admin";
+
+                // Yêu cầu xác thực sinh trắc học thiết bị cục bộ thông qua WebAuthn API
                 const publicKey = {
-                    challenge: Uint8Array.from("random_challenge_string", c => c.charCodeAt(0)),
+                    challenge: Uint8Array.from("tuya_smart_challenge_str", c => c.charCodeAt(0)),
                     rp: { name: "Tuya Smart Home Web" },
                     user: {
-                        id: Uint8Array.from("1", c => c.charCodeAt(0)),
-                        name: "admin",
-                        displayName: "Admin"
+                        id: Uint8Array.from(username, c => c.charCodeAt(0)),
+                        name: username,
+                        displayName: username
                     },
                     pubKeyCredParams: [{ alg: -7, type: "public-key" }],
                     timeout: 60000,
                     authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }
                 };
 
-                // Gọi API bảo mật của thiết bị di động
                 await navigator.credentials.create({ publicKey });
 
-                // Nếu quét Face ID thành công trên thiết bị, tự động cấp quyền vào trang chủ
-                // (Trong môi trường thực tế sẽ gửi credential lên server xác thực, ở đây ta xác thực session qua fetch phụ trợ)
-                const res = await fetch('/login', {
+                // Xác thực thành công qua phần cứng, gọi API cấp phiên đăng nhập
+                const res = await fetch('/api/biometric/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: "admin", password: "123456" }) // bypass qua mật khẩu ngầm khi Face ID khớp
+                    body: JSON.stringify({ username })
                 });
                 const data = await res.json();
                 if (data.success) {
                     window.location.href = '/';
+                } else {
+                    document.getElementById('error-msg').innerText = data.message;
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('error-msg').innerText = "Xác thực Face ID thất bại hoặc bị hủy.";
+                document.getElementById('error-msg').innerText = "Xác thực Face ID / Vân tay thất bại hoặc bị hủy.";
             }
         }
     </script>
